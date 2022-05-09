@@ -1,6 +1,6 @@
 from .base import *
 
-def calculate_hazard_design_intensities(data,hazard_rps):
+def calculate_hazard_design_intensities(data,hazard_rps,intensity_type='acc'):
     '''
     calculate design intensities based on an annual probability of exceedance (APoE)
 
@@ -10,7 +10,7 @@ def calculate_hazard_design_intensities(data,hazard_rps):
     :return: np arrays for all intensities from the hazard curve realizations and stats (mean and quantiles)
     '''
     
-    imtls = data['metadata']['imtls']
+    imtls = data['metadata'][f'{intensity_type}_imtls']    
     rlz_weights = np.array(data['metadata']['rlz_weights'])
     hcurves_rlzs = np.array(data['hcurves']['hcurves_rlzs'])
     hcurves_stats   = np.array(data['hcurves']['hcurves_stats'])
@@ -44,17 +44,19 @@ def calculate_hazard_design_intensities(data,hazard_rps):
     return im_hazard, stats_im_hazard
 
 
-def calculate_risk_design_intensities(data,risk_assumptions):
+def calculate_risk_design_intensities(data,risk_assumptions,imtl_list):
     '''
     calculate design intensities based on a risk target and fragility assumptions
 
     :param data: dictionary containing hazard curves and metadata for sites, intensity measures, and rlz weights
     :param risk_target_assumptions: dictionary with keys for combinations of assumptions
+    :param imtl_list: a list of intensity measures to include (must be included in the available imtls)
 
     :return: np arrays for all intensities from the hazard curve realizations and stats (mean and quantiles)
     '''
 
-    imtls = data['metadata']['imtls']
+    intensity_type = 'acc'
+    imtls = data['metadata'][f'{intensity_type}_imtls']
     rlz_weights = np.array(data['metadata']['rlz_weights'])
     hcurves_rlzs = np.array(data['hcurves']['hcurves_rlzs'])
     hcurves_stats = np.array(data['hcurves']['hcurves_stats'])
@@ -72,13 +74,16 @@ def calculate_risk_design_intensities(data,risk_assumptions):
     stats_lambda_risk = np.zeros_like(stats_im_risk)
     stats_fragility_risk = np.zeros_like(stats_im_risk)
     
-    for i_site in range(n_sites):
-        for i_imt,imt in enumerate(imtls.keys()):
+    
+    for imt in imtl_list:
+        print(f'Processing {imt}.')
+        i_imt = list(imtls.keys()).index(imt)
+        for i_site in range(n_sites):
             # loop over the risk target assumption dictionaries
             for i_rt,rt in enumerate(risk_assumptions.keys()):
                 risk_target = risk_assumptions[rt]['risk_target']
                 beta = risk_assumptions[rt]['beta']
-                conditional_prob = risk_assumptions[rt]['conditional_prob']
+                conditional_prob = risk_assumptions[rt]['design_point']
 
                 # optimize the design intensity for the risk target for each realization
                 for i_rlz in range(n_rlz):
@@ -128,7 +133,7 @@ def risk_convolution_error(median, hcurve, imtl, beta, target_risk):
     return np.abs(target_risk - risk)
 
 
-def find_uniform_risk_intensity(hcurve, imtl, beta, target_risk, conditional_prob):
+def find_uniform_risk_intensity(hcurve, imtl, beta, target_risk, design_point):
     '''
     optimization to find the fragility and associated design intensity
 
@@ -136,21 +141,21 @@ def find_uniform_risk_intensity(hcurve, imtl, beta, target_risk, conditional_pro
     :param imtl:   intensity measure levels
     :param beta:   log std for the fragility function
     :param target_risk:   risk value to target
-    :param conditional_prob:   anchor point for selecting the design intensity
+    :param design_point:  design point for selecting the design intensity
 
     :return: design intensity and median of fragility
     '''
 
     x0 = 0.5
     median = minimize(risk_convolution_error, x0, args=(hcurve, imtl, beta, target_risk), method='Nelder-Mead').x[0]
-    im_r = stats.lognorm(beta, scale=median).ppf(conditional_prob)
+    im_r = stats.lognorm(beta, scale=median).ppf(design_point)
 
     return im_r, median
 
 
 def risk_convolution(hcurve, imtl, median, beta):
     '''
-    calculates the totall annual risk and the underlying disaggregation curve
+    calculates the total annual risk and the underlying disaggregation curve
 
     :param hcurve: hazard curve
     :param imtl:   intensity measure levels

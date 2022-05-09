@@ -1,13 +1,4 @@
-from openquake.commonlib import datastore
-
-import h5py
-import pandas as pd
-import numpy as np
-import json
-import glob
-import re
-from pathlib import Path
-
+from .base import *
 
 def retrieve_data(file_id,named_sites=True):
     '''
@@ -19,8 +10,12 @@ def retrieve_data(file_id,named_sites=True):
     dstore = datastore.read(file_id)
     oqparam = vars(dstore['oqparam'])
     data['metadata'] = {}
-    data['metadata']['imtls'] = oqparam['hazard_imtls']
-  
+    data['metadata']['quantiles'] = oqparam['quantiles']
+    
+    acc_imtls = oqparam['hazard_imtls']
+    data['metadata']['acc_imtls'] = acc_imtls
+    data['metadata']['disp_imtls'] = convert_imtls_to_disp(acc_imtls)
+    
     if named_sites:
         data['metadata']['sites'] = find_site_names(dstore.read_df('sitecol')).to_dict()
     else:
@@ -37,8 +32,20 @@ def retrieve_data(file_id,named_sites=True):
 
     return data
 
+def convert_imtls_to_disp(acc_imtls):
+    '''
+    converts the intensity measure types and levels to spectral displacements
+    '''
+    disp_imtls = {}
+    for acc_imt in acc_imtls.keys():
+        period = period_from_imt(acc_imt)
+        disp_imt = acc_imt.replace('A','D')
 
-def find_site_names(sites,dtol=0.001):
+        disp_imtls[disp_imt] = acc_to_disp(np.array(acc_imtls[acc_imt]),period).tolist()
+        
+    return disp_imtls
+
+def find_site_names(sites,dtol=0.1):
     '''
     sets site names as the index for the sites dataframe
     '''
