@@ -170,3 +170,4 @@ def risk_convolution(hcurve, imtl, median, beta):
     risk = np.trapz(disaggregation, x=imtl)
 
     return risk, disaggregation
+

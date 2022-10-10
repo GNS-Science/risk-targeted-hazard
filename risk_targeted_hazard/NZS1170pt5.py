@@ -20,13 +20,13 @@ Ch['A'] = [1.00, 2.35, 2.35, 2.35, 1.89, 1.60, 1.40, 1.24, 1.12, 1.03, 0.95, 0.7
 Ch['B'] = Ch['A'].values
 Ch['C'] = [1.33, 2.93, 2.93, 2.93, 2.36, 2.00, 1.74, 1.55, 1.41, 1.29, 1.19, 0.88, 0.66, 0.53, 0.44, 0.32, 0.25, 0.20]
 Ch['D'] = [1.12, 3.00, 3.00, 3.00, 3.00, 3.00, 2.84, 2.53, 2.29, 2.09, 1.93, 1.43, 1.07, 0.86, 0.71, 0.52, 0.40, 0.32]
-Ch['E'] = [3.00, 3.00, 3.00, 3.00, 3.00, 3.00, 3.00, 3.00, 3.00, 3.00, 3.00, 2.21, 1.66, 1.33, 1.11, 0.81, 0.62, 0.49]
+Ch['E'] = [1.12, 3.00, 3.00, 3.00, 3.00, 3.00, 3.00, 3.00, 3.00, 3.00, 3.00, 2.21, 1.66, 1.33, 1.11, 0.81, 0.62, 0.49]
 
 # Z values from NZS1170.5
 site_Z_values= {'Te Anau': 0.36,
  'Invercargill': 0.17,
  'Queenstown': 0.32,
- 'Haast': np.nan,
+ 'Haast': 0.44,
  'Mount Cook': 0.38,
  'Franz Josef': 0.44,
  'Dunedin': 0.13,
@@ -35,7 +35,7 @@ site_Z_values= {'Te Anau': 0.36,
  'Otira': 0.6,
  'Westport': 0.3,
  'Christchurch': 0.3,
- 'Hammer Springs': 0.55,
+ 'Hanmer Springs': 0.55,
  'Nelson': 0.27,
  'Kaikoura': 0.42,
  'Blenheim': 0.33,
@@ -44,7 +44,7 @@ site_Z_values= {'Te Anau': 0.36,
  'Hawera': 0.18,
  'Auckland': 0.13,
  'Wellington': 0.4,
- 'Whanganui': np.nan,
+ 'Whanganui': 0.25,
  'Levin': 0.4,
  'Hamilton': 0.16,
  'Thames': 0.16,
@@ -56,4 +56,5 @@ site_Z_values= {'Te Anau': 0.36,
  'Tauranga': 0.2,
  'Napier': 0.38,
  'Whakatane': 0.3,
- 'Gisborne': 0.36}
+ 'Gisborne': 0.36,
+ 'Rotorua': 0.24}
