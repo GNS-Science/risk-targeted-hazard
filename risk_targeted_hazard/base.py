@@ -7,9 +7,10 @@ import json
 import glob
 import re
 import h5py
+import ast
+
 
 from pathlib import Path
-from openquake.commonlib import datastore
 from scipy import stats
 from scipy.optimize import minimize
 

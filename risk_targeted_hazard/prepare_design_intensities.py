@@ -4,112 +4,106 @@ def calculate_hazard_design_intensities(data,hazard_rps,intensity_type='acc'):
     '''
     calculate design intensities based on an annual probability of exceedance (APoE)
 
-    :param data: dictionary containing hazard curves and metadata for sites, intensity measures, and rlz weights
+    :param data: dictionary containing hazard curves and metadata for vs30, sites, intensity measures
     :param hazard_rps: np array containing the desired return periods (1 / APoE)
 
     :return: np arrays for all intensities from the hazard curve realizations and stats (mean and quantiles)
     '''
-    
-    imtls = data['metadata'][f'{intensity_type}_imtls']    
-    rlz_weights = np.array(data['metadata']['rlz_weights'])
-    hcurves_rlzs = np.array(data['hcurves']['hcurves_rlzs'])
-    hcurves_stats   = np.array(data['hcurves']['hcurves_stats'])
-    
-    [n_sites,n_imts,n_imtls,n_rlz] = hcurves_rlzs.shape
-    [_,_,_,n_stats] = hcurves_stats.shape
-    
+
+    vs30s = data['metadata']['vs30s']
+    imtls = data['metadata'][f'{intensity_type}_imtls']
+    hcurves_stats = np.array(data['hcurves']['hcurves_stats'])
+
+    [n_vs30, n_sites, n_imts, n_imtls, n_stats] = hcurves_stats.shape
+
     n_rps = len(hazard_rps)
-    
-    im_hazard = np.zeros([n_sites,n_imts,n_rps,n_rlz,2])
-    stats_im_hazard = np.zeros([n_sites,n_imts,n_rps,n_stats])
-    
-    for i_site in range(n_sites):
-        for i_imt,imt in enumerate(imtls.keys()):
-            for i_rlz in range(n_rlz):
-                # logspace interpolation at the APoE for each return period
-                im_hazard[i_site,i_imt,:,i_rlz,0] = np.exp(np.interp(np.log(1/hazard_rps), np.log(np.flip(hcurves_rlzs[i_site,i_imt,:,i_rlz])), np.log(np.flip(imtls[imt]))))
 
-            # record the position of the realizations in the cdf of the full distribution
-            for i_rp,rp in enumerate(hazard_rps):
-                # order the metric to find the quantiles
-                cdf_idx = np.argsort(np.squeeze(im_hazard[i_site,i_imt,i_rp,:,0]))
-                im_idx = np.argsort(cdf_idx)
-                cdf = np.cumsum(rlz_weights[cdf_idx])
-                im_hazard[i_site,i_imt,i_rp,:,1] = cdf[im_idx]
+    stats_im_hazard = np.zeros([n_vs30, n_sites, n_imts, n_rps, n_stats])
 
-            # loop over the median and any quantiles
-            for i_stat in range(n_stats):
-                stats_im_hazard[i_site,i_imt,:,i_stat] = np.exp(np.interp(np.log(1/hazard_rps), np.log(np.flip(hcurves_stats[i_site,i_imt,:,i_stat])), np.log(np.flip(imtls[imt]))))
-                
-    return im_hazard, stats_im_hazard
+    for i_vs30 in range(n_vs30):
+        for i_site in range(n_sites):
+            for i_imt, imt in enumerate(imtls.keys()):
+
+                # loop over the median and any quantiles
+                for i_stat in range(n_stats):
+                    stats_im_hazard[i_vs30, i_site, i_imt, :, i_stat] = np.exp(np.interp(np.log(1 / hazard_rps), np.log(
+                        np.flip(hcurves_stats[i_vs30, i_site, i_imt, :, i_stat])), np.log(np.flip(imtls[imt]))))
+
+    return stats_im_hazard
 
 
 def calculate_risk_design_intensities(data,risk_assumptions,imtl_list):
     '''
     calculate design intensities based on a risk target and fragility assumptions
 
-    :param data: dictionary containing hazard curves and metadata for sites, intensity measures, and rlz weights
+    :param data: dictionary containing hazard curves and metadata for vs30, sites, intensity measures
     :param risk_target_assumptions: dictionary with keys for combinations of assumptions
     :param imtl_list: a list of intensity measures to include (must be included in the available imtls)
 
-    :return: np arrays for all intensities from the hazard curve realizations and stats (mean and quantiles)
+    :return: np arrays for all intensities from the mean hazard curve
     '''
 
     intensity_type = 'acc'
+    vs30s = data['metadata']['vs30s']
     imtls = data['metadata'][f'{intensity_type}_imtls']
-    rlz_weights = np.array(data['metadata']['rlz_weights'])
-    hcurves_rlzs = np.array(data['hcurves']['hcurves_rlzs'])
+    n_imtls = len(imtls[list(imtls.keys())[0]])
     hcurves_stats = np.array(data['hcurves']['hcurves_stats'])
 
-    [n_sites, n_imts, n_imtls, n_rlz] = hcurves_rlzs.shape
-    [_, _, _, n_stats] = hcurves_stats.shape
-    
+    [n_vs30, n_sites, n_imts, n_imtls, n_stats] = hcurves_stats.shape
+
     n_risk_assumptions = len(risk_assumptions.keys())
-    
-    im_risk = np.zeros([n_sites,n_imts,n_risk_assumptions,n_rlz,2])
-    lambda_risk = np.zeros([n_sites,n_imts,n_risk_assumptions,n_rlz])
-    fragility_risk = np.zeros_like(lambda_risk)
-    
-    stats_im_risk = np.zeros([n_sites,n_imts,n_risk_assumptions,n_stats])
-    stats_lambda_risk = np.zeros_like(stats_im_risk)
-    stats_fragility_risk = np.zeros_like(stats_im_risk)
-    
-    
-    for imt in imtl_list:
-        print(f'Processing {imt}.')
-        i_imt = list(imtls.keys()).index(imt)
-        for i_site in range(n_sites):
-            # loop over the risk target assumption dictionaries
-            for i_rt,rt in enumerate(risk_assumptions.keys()):
-                risk_target = risk_assumptions[rt]['risk_target']
-                beta = risk_assumptions[rt]['beta']
-                conditional_prob = risk_assumptions[rt]['design_point']
 
-                # optimize the design intensity for the risk target for each realization
-                for i_rlz in range(n_rlz):
-                    [im_r,median] = find_uniform_risk_intensity(hcurves_rlzs[i_site,i_imt,:,i_rlz], imtls[imt], beta, risk_target, conditional_prob)
-                    im_risk[i_site,i_imt,i_rt,i_rlz,0] = im_r
-                    lambda_risk[i_site,i_imt,i_rt,i_rlz] = np.interp(im_r, imtls[imt], hcurves_rlzs[i_site,i_imt,:,i_rlz])
-                    fragility_risk[i_site,i_imt,i_rt,i_rlz] = median
+    im_risk = np.zeros([n_vs30, n_sites, n_imts, n_risk_assumptions])
+    lambda_risk = np.zeros_like(im_risk)
+    fragility_risk = np.zeros_like(im_risk)
+    disagg_risk = np.zeros([n_vs30, n_sites, n_imts, n_risk_assumptions, n_imtls])
 
-                # record the position of the realizations in the cdf of the full distribution
-                # order the metric to find the quantiles
-                cdf_idx = np.argsort(np.squeeze(im_risk[i_site,i_imt,i_rt,:,0]))
-                im_idx = np.argsort(cdf_idx)
-                cdf = np.cumsum(rlz_weights[cdf_idx])
-                im_risk[i_site,i_imt,i_rt,:,1] = cdf[im_idx]
+    # select the statistic for the mean
+    i_stat = 0
 
-                # loop over the median and any quantiles
-                for i_stat in range(n_stats):
-                    [im_r,median] = find_uniform_risk_intensity(hcurves_stats[i_site,i_imt,:,i_stat], imtls[imt], beta, risk_target, conditional_prob)
-                    stats_im_risk[i_site,i_imt,i_rt,i_stat] = im_r
-                    stats_lambda_risk[i_site,i_imt,i_rt,i_stat] = np.interp(im_r, imtls[imt], hcurves_stats[i_site,i_imt,:,i_stat])
-                    stats_fragility_risk[i_site,i_imt,i_rt,i_stat] = median
+    for i_vs30, vs30 in enumerate(vs30s):
+        print(f'Processing Vs30: {vs30}.')
+        for i_imt, imt in enumerate(imtls.keys()):
+            print(f'\tProcessing {imt}.')
+
+            if imt != 'PGA':
+                for i_site in range(n_sites):
+                    # loop over the risk target assumption dictionaries
+                    for i_rt, rt in enumerate(risk_assumptions.keys()):
+                        collapse_risk_target = risk_assumptions[rt]['collapse_risk_target']
+                        cmr = risk_assumptions[rt]['cmr']
+                        beta = risk_assumptions[rt]['beta']
+                        design_point = risk_assumptions[rt]['design_point']
+
+                        [im_r, median] = find_uniform_risk_intensity(hcurves_stats[i_vs30, i_site, i_imt, :, i_stat],
+                                                                     imtls[imt], beta, collapse_risk_target,
+                                                                     design_point)
+                        im_risk[i_vs30, i_site, i_imt, i_rt] = im_r
+                        lambda_risk[i_vs30, i_site, i_imt, i_rt] = np.interp(im_r, imtls[imt],
+                                                                             hcurves_stats[i_vs30, i_site, i_imt, :,
+                                                                             i_stat])
+                        fragility_risk[i_vs30, i_site, i_imt, i_rt] = median
+
+                        risk, disagg = risk_convolution(hcurves_stats[i_vs30, i_site, i_imt, :, i_stat], imtls[imt],
+                                                        median, beta)
+                        disagg_risk[i_vs30, i_site, i_imt, i_rt, :] = disagg
+
+            else:
+                for i_site in range(n_sites):
+                    # loop over the risk target assumption dictionaries
+                    for i_rt, rt in enumerate(risk_assumptions.keys()):
+                        hazard_rp = risk_assumptions[rt]['R_rp']
+                        im_risk[i_vs30, i_site, i_imt, i_rt] = np.exp(np.interp(np.log(1 / hazard_rp), np.log(
+                            np.flip(hcurves_stats[i_vs30, i_site, i_imt, :, i_stat])), np.log(np.flip(imtls[imt]))))
+                        lambda_risk[i_vs30, i_site, i_imt, i_rt] = 1 / hazard_rp
+                        fragility_risk[i_vs30, i_site, i_imt, i_rt] = np.nan
+                        disagg_risk[i_vs30, i_site, i_imt, i_rt, :] = np.nan
+        print()
 
     # store results as a dictionary
-    im_risk = {'im_risk':im_risk.tolist(),'lambda_risk':lambda_risk.tolist(),'fragility_risk':fragility_risk.tolist()}
-    stats_im_risk = {'stats_im_risk':stats_im_risk.tolist(),'stats_lambda_risk':stats_lambda_risk.tolist(),'stats_fragility_risk':stats_fragility_risk.tolist()}
-    return im_risk, stats_im_risk
+    im_risk = {'im_risk': im_risk, 'lambda_risk': lambda_risk, 'fragility_risk': fragility_risk,
+               'disagg_risk': disagg_risk}
+    return im_risk
 
 
 
