@@ -32,13 +32,12 @@ def calculate_hazard_design_intensities(data,hazard_rps,intensity_type='acc'):
     return stats_im_hazard
 
 
-def calculate_risk_design_intensities(data,risk_assumptions,imtl_list):
+def calculate_risk_design_intensities(data,risk_assumptions):
     '''
     calculate design intensities based on a risk target and fragility assumptions
 
     :param data: dictionary containing hazard curves and metadata for vs30, sites, intensity measures
     :param risk_target_assumptions: dictionary with keys for combinations of assumptions
-    :param imtl_list: a list of intensity measures to include (must be included in the available imtls)
 
     :return: np arrays for all intensities from the mean hazard curve
     '''
