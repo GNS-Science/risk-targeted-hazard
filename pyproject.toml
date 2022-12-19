@@ -1,0 +1,21 @@
+[tool]
+
+[tool.poetry]
+name = "risk-targeted-hazard"
+description = "Risk Targeted Hazard"
+version = "0.1.0"
+authors = ["Anne Hulsey <anne.hulsey@auckland.ac.nz>"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+notebook = "*"
+numpy = "*"
+scipy = "*"
+h5py = "*"
+pandas = "*"
+matplotlib = "*"
+toshi_hazard_store = "*"
+
+[tool.poetry.dev-dependencies]
+mypy = "*"
+ipdb = "*"

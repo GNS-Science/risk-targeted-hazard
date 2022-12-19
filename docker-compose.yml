@@ -1,0 +1,11 @@
+version: "3.7"
+services:
+  risk-targeted-hazard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    volumes:
+      - .:/src
+    ports:
+      - "8888:8888"
