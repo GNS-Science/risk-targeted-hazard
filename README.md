@@ -21,7 +21,7 @@ Create the developer environment with:
 
 `make developer`
 
-Start development environment and display the secure URL of the jupyter notebook:
+Start development environment and display the login URL of the jupyter notebook:
 
 `make start`
 
@@ -31,11 +31,19 @@ Stop and remove the container:
 
 Create a shell in the container:
 
-`make dev-shell`
+`make shell`
+
+Run tests:
+
+`make test`
 
 Linting:
 
 `make lint`
+
+Update python packages. Set the shell variable `POETRY_PACKAGES` to update a specific package(s):
+
+`make venv-update`
 
 ### Visual studio code
 

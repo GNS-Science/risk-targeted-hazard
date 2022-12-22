@@ -12,9 +12,17 @@ start:
 stop:
 	docker compose stop risk-targeted-hazard
 
-.PHONY: dev-shell
-dev-shell:
-	docker compose exec risk-targeted-hazard poetry run bash
+.PHONY: shell
+shell:
+	docker compose exec risk-targeted-hazard poetry shell
+
+.PHONY: venv-update
+venv-update:
+	docker compose run -T --rm --entrypoint="poetry update ${POETRY_PACKAGES}" risk-targeted-hazard
+
+.PHONY: test
+test:
+	docker compose run --rm --entrypoint="poetry run pytest test" risk-targeted-hazard
 
 .PHONY: lint
 lint:
