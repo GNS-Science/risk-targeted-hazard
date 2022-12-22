@@ -32,6 +32,8 @@ ENV HOME=/src
 ENV NZSHM22_HAZARD_STORE_STAGE=PROD
 ENV NZSHM22_HAZARD_STORE_REGION=ap-southeast-2
 
+ENV SHELL=bash
+
 # TODO: possibly set AWS_SHARED_CREDENTIALS_FILE location?
 # https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html
 
