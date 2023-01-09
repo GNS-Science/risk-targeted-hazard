@@ -4,8 +4,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      target: dev
+      args:
+        - DOCKER_USER_UID=$DOCKER_USER_UID
     volumes:
       - .:/src
+      - $DOCKER_AWS_CREDENTIALS_DIR:/home/user/.aws
     ports:
       - "8888:8888"
+    env_file:
+      - ./.env

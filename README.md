@@ -9,13 +9,21 @@ Horspool, N., Hulsey, A., Elwood., K., and Gerstenberger, M. 2021. Risk-targeted
 
 The development environment is a docker container that runs jupyter notebook with the library dependencies needed by the library installed.
 
-### Setup
+When running it mounts this directory so you can edit files in your preferred editor and see changes immediately.
+
+### Requirements
 
 To run the developer environment you will need `make` and docker with the [docker compose plugin](https://docs.docker.com/compose/install/linux/):
 
-TODO: instructions for setting UID
+#### Configuration
 
-TODO: instructions for toshi_hazard_store
+Make a copy of the `.env.example` file and name it `.env`.
+
+You should set `DOCKER_USER_UID` to your user id and also set `DOCKER_AWS_CREDENTIALS_DIR` to the directory containing your AWS credentials (defaults to `~/.aws`).
+
+You can also configure the environment variables for [Toshi Hazard Store](https://github.com/GNS-Science/toshi-hazard-store) such as `NZSHM22_HAZARD_STORE_STAGE` and `NZSHM22_HAZARD_STORE_REGION`.
+
+#### Makefile commands
 
 Create the developer environment with:
 
