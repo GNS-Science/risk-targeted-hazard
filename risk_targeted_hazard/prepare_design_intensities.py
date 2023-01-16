@@ -3,10 +3,21 @@ from numba import njit
 
 
 @njit
-def interpolate(hazard_rps_reciprocal_log, hcurves_stats, imtls_imt_flip_log):
-    return np.exp(np.interp(hazard_rps_reciprocal_log, np.log(
-        np.flip(hcurves_stats)), imtls_imt_flip_log))
-
+def _hazard_design_intensities_interpolate(
+    hcurves_stats,
+    stats_im_hazard,
+    hazard_rps_reciprocal_log,
+    imtls_imt_flip_log,
+    i_vs30,
+    i_site,
+    i_imt,
+    n_stats,
+) -> None:
+    # loop over the median and any quantiles
+    for i_stat in range(n_stats):
+        # the interpolation is done as a linear interpolation in logspace
+        # all inputs are converted to the natural log (which is log in numpy) and the output is converted back via the exponent
+        stats_im_hazard[i_vs30, i_site, i_imt, :, i_stat] = np.exp(np.interp(hazard_rps_reciprocal_log, np.log(np.flip(hcurves_stats[i_vs30, i_site, i_imt, :, i_stat])), imtls_imt_flip_log))
 
 def calculate_hazard_design_intensities(data,hazard_rps,intensity_type='acc'):
     '''
@@ -40,15 +51,16 @@ def calculate_hazard_design_intensities(data,hazard_rps,intensity_type='acc'):
 
                 imtls_imt_flip_log = imtls_imt_flip_logs[imt]
 
-                # loop over the median and any quantiles
-                for i_stat in range(n_stats):
-                    # the interpolation is done as a linear interpolation in logspace
-                    # all inputs are converted to the natural log (which is log in numpy) and the output is converted back via the exponent
-                    stats_im_hazard[i_vs30, i_site, i_imt, :, i_stat] = interpolate(
-                        hazard_rps_reciprocal_log,
-                        hcurves_stats[i_vs30, i_site, i_imt, :, i_stat],
-                        imtls_imt_flip_log
-                    )
+                _hazard_design_intensities_interpolate(
+                    hcurves_stats,
+                    stats_im_hazard,
+                    hazard_rps_reciprocal_log,
+                    imtls_imt_flip_log,
+                    i_vs30,
+                    i_site,
+                    i_imt,
+                    n_stats
+                )
 
     return stats_im_hazard
 
