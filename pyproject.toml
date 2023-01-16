@@ -9,6 +9,7 @@ authors = ["Anne Hulsey <anne.hulsey@auckland.ac.nz>"]
 [tool.poetry.dependencies]
 python = "^3.10"
 numpy = "*"
+numba = "*"
 scipy = "*"
 h5py = "*"
 pandas = "*"
