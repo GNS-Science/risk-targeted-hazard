@@ -20,16 +20,24 @@ def calculate_hazard_design_intensities(data,hazard_rps,intensity_type='acc'):
 
     stats_im_hazard = np.zeros([n_vs30, n_sites, n_imts, n_rps, n_stats])
 
+    hazard_rps_reciprocal_log = np.log(1 / hazard_rps)
+
+    imtls_imt_flip_logs = {}
+    for imt in imtls:
+        imtls_imt_flip_logs[imt] = np.log(np.flip(imtls[imt]))
+
     for i_vs30 in range(n_vs30):
         for i_site in range(n_sites):
             for i_imt, imt in enumerate(imtls.keys()):
+
+                imtls_imt_flip_log = imtls_imt_flip_logs[imt]
 
                 # loop over the median and any quantiles
                 for i_stat in range(n_stats):
                     # the interpolation is done as a linear interpolation in logspace
                     # all inputs are converted to the natural log (which is log in numpy) and the output is converted back via the exponent
-                    stats_im_hazard[i_vs30, i_site, i_imt, :, i_stat] = np.exp(np.interp(np.log(1 / hazard_rps), np.log(
-                        np.flip(hcurves_stats[i_vs30, i_site, i_imt, :, i_stat])), np.log(np.flip(imtls[imt]))))
+                    stats_im_hazard[i_vs30, i_site, i_imt, :, i_stat] = np.exp(np.interp(hazard_rps_reciprocal_log, np.log(
+                        np.flip(hcurves_stats[i_vs30, i_site, i_imt, :, i_stat])), imtls_imt_flip_log))
 
     return stats_im_hazard
 
