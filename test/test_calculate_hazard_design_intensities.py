@@ -8,7 +8,9 @@ from numpy.testing import assert_almost_equal
 
 
 class TestCalculateHazardDesignIntensities(TestCase):
-    def generate_hcurves_test_data(self):        
+    def generate_hcurves_test_data(self):
+        # NOTE: The output of this function is cached in test/data/hcurves_test_data.npy
+        # If you make changes you can delete the file to regenerate the test data
         hazard_id = "SLT_v8_gmm_v2_FINAL"
 
         res = next(
@@ -31,7 +33,6 @@ class TestCalculateHazardDesignIntensities(TestCase):
 
         vs30_list = [250, 400]
         imts = ["SA(0.5)", "SA(1.5)"]
-        # aggs = ["mean", "cov", "std", "0.005", "0.01", "0.025", "0.05", "0.1", "0.2", "0.5", "0.8", "0.9", "0.95", "0.975", "0.99", "0.995"]
         aggs = ["mean", "0.1", "0.5", "0.9"]
 
         columns = ["lat", "lon", "vs30", "imt", "agg", "level", "hazard"]
@@ -78,9 +79,6 @@ class TestCalculateHazardDesignIntensities(TestCase):
         data["metadata"] = {}
         data["metadata"]["quantiles"] = []
         data["metadata"]["acc_imtls"] = imtls
-
-        # NOTE: saving this causes problem serializing the data structure
-        # data['metadata']['sites'] = sites
 
         data["metadata"]["vs30s"] = vs30_list
 
@@ -166,11 +164,13 @@ class TestCalculateHazardDesignIntensities(TestCase):
             return data
 
     def setUp(self):
-        test_data_filename = os.path.dirname(__file__) + "/hcurves_test_data.npy"
+        test_data_filename = os.path.dirname(__file__) + "/data/hcurves_test_data.npy"
 
         if os.path.isfile(test_data_filename):
+            print(f"Loading existing hcurves test data from {test_data_filename}")
             self.data = np.load(test_data_filename, allow_pickle=True).item()
         else:
+            print("Regenerating hcurves test data")
             self.data = self.generate_hcurves_test_data()
             np.save(test_data_filename, self.data)
 
