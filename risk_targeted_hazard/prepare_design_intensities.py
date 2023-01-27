@@ -1,23 +1,26 @@
 from .base import *
-from numba import njit
+from numba import njit, typed, prange
 
 
-@njit
+@njit(parallel=True)
 def _hazard_design_intensities_interpolate(
     hcurves_stats,
     stats_im_hazard,
     hazard_rps_reciprocal_log,
-    imtls_imt_flip_log,
-    i_vs30,
-    i_site,
-    i_imt,
+    imtls_imt_flip_logs,
+    n_vs30,
+    n_sites,
+    n_imts,
     n_stats,
 ) -> None:
-    # loop over the median and any quantiles
-    for i_stat in range(n_stats):
-        # the interpolation is done as a linear interpolation in logspace
-        # all inputs are converted to the natural log (which is log in numpy) and the output is converted back via the exponent
-        stats_im_hazard[i_vs30, i_site, i_imt, :, i_stat] = np.exp(np.interp(hazard_rps_reciprocal_log, np.log(np.flip(hcurves_stats[i_vs30, i_site, i_imt, :, i_stat])), imtls_imt_flip_log))
+    for i_site in prange(n_sites):
+        for i_vs30 in range(n_vs30):
+            for i_imt in range(n_imts):
+                # loop over the median and any quantiles
+                for i_stat in range(n_stats):
+                    # the interpolation is done as a linear interpolation in logspace
+                    # all inputs are converted to the natural log (which is log in numpy) and the output is converted back via the exponent
+                    stats_im_hazard[i_vs30, i_site, i_imt, :, i_stat] = np.exp(np.interp(hazard_rps_reciprocal_log, np.log(np.flip(hcurves_stats[i_vs30, i_site, i_imt, :, i_stat])), imtls_imt_flip_logs[i_imt]))
 
 def calculate_hazard_design_intensities(data,hazard_rps,intensity_type='acc'):
     '''
@@ -41,26 +44,20 @@ def calculate_hazard_design_intensities(data,hazard_rps,intensity_type='acc'):
 
     hazard_rps_reciprocal_log = np.log(1 / hazard_rps)
 
-    imtls_imt_flip_logs = {}
+    imtls_imt_flip_logs = typed.List()
     for imt in imtls:
-        imtls_imt_flip_logs[imt] = np.log(np.flip(imtls[imt]))
+        imtls_imt_flip_logs.append(np.log(np.flip(imtls[imt])))
 
-    for i_vs30 in range(n_vs30):
-        for i_site in range(n_sites):
-            for i_imt, imt in enumerate(imtls.keys()):
-
-                imtls_imt_flip_log = imtls_imt_flip_logs[imt]
-
-                _hazard_design_intensities_interpolate(
-                    hcurves_stats,
-                    stats_im_hazard,
-                    hazard_rps_reciprocal_log,
-                    imtls_imt_flip_log,
-                    i_vs30,
-                    i_site,
-                    i_imt,
-                    n_stats
-                )
+    _hazard_design_intensities_interpolate(
+        hcurves_stats,
+        stats_im_hazard,
+        hazard_rps_reciprocal_log,
+        imtls_imt_flip_logs,
+        n_vs30,
+        n_sites,
+        n_imts,
+        n_stats
+    )
 
     return stats_im_hazard
 
