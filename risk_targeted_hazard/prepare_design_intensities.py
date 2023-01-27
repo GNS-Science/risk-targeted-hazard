@@ -44,8 +44,11 @@ def calculate_hazard_design_intensities(data,hazard_rps,intensity_type='acc'):
 
     hazard_rps_reciprocal_log = np.log(1 / hazard_rps)
 
+    assert(len(imtls) == n_imts)
+
     imtls_imt_flip_logs = typed.List()
     for imt in imtls:
+        assert(len(imtls[imt]) == n_imtls)
         imtls_imt_flip_logs.append(np.log(np.flip(imtls[imt])))
 
     _hazard_design_intensities_interpolate(
