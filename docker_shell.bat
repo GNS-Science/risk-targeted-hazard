@@ -1,0 +1,1 @@
+docker run -t -i -v "%cd%:/src" --entrypoint=bash risk_targeted_hazard
