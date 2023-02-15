@@ -27,6 +27,18 @@ Install the development dependencies:
 pip3 install -r requirements-dev.txt
 ```
 
+Run the tests:
+
+```
+pytest test
+```
+
+Run jupyter notebook:
+
+```
+jupyter notebook
+```
+
 ### Docker
 
 You can also run the development environment using docker. See the [docker README](docker/README.md).
