@@ -2,12 +2,12 @@ version: "3.7"
 services:
   risk-targeted-hazard:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: docker/Dockerfile
       args:
         - DOCKER_USER_UID=$DOCKER_USER_UID
     volumes:
-      - .:/src
+      - ..:/src
       - $DOCKER_AWS_CREDENTIALS_DIR:/home/user/.aws
     ports:
       - "8888:8888"
