@@ -1,0 +1,7 @@
+numpy==1.23.5
+numba==0.56.4
+scipy==1.9.3
+h5py==3.7.0
+pandas==1.5.2
+matplotlib==3.6.2
+toshi_hazard_store==0.5.5
