@@ -1,5 +1,9 @@
-set AWS_CREDENTIALS_DIR=%userprofile%\.aws
+:: default location for .aws directory
+set DOCKER_AWS_CREDENTIALS_DIR=%userprofile%\.aws
 
-echo Mounting %cd% inside container with AWS credentials from %AWS_CREDENTIALS_DIR%
+:: read .env file variables
+FOR /F "eol=# tokens=*" %%i IN (%~dp0.env) DO SET %%i
 
-docker run --rm -i -t --env-file .env -p "8888:8888" -v "%cd%:/src" -v "%AWS_CREDENTIALS_DIR%:/home/user/.aws" risk_targeted_hazard
+echo Mounting %cd% inside container with AWS credentials from %DOCKER_AWS_CREDENTIALS_DIR%
+
+docker run --rm -i -t --env-file .env -p "8888:8888" -v "%cd%:/src" -v "%DOCKER_AWS_CREDENTIALS_DIR%:/home/user/.aws" risk_targeted_hazard
