@@ -1,7 +1,6 @@
 from .base import *
 from numba import njit, typed, prange
 
-
 @njit(parallel=True)
 def _hazard_design_intensities_interpolate(
     hcurves_stats,
@@ -78,6 +77,13 @@ def calculate_risk_design_intensities(data,risk_assumptions):
     intensity_type = 'acc'
     vs30s = data['metadata']['vs30s']
     imtls = data['metadata'][f'{intensity_type}_imtls']
+
+    # convert imtls to numpy arrays so numba can optimize
+    # NOTE: can remove this step is imtls is already numpy arrays
+    np_imtls = {}
+    for imt in imtls:
+        np_imtls[imt] = np.array(imtls[imt])
+
     n_imtls = len(imtls[list(imtls.keys())[0]])
     hcurves_stats = np.array(data['hcurves']['hcurves_stats'])
 
@@ -109,19 +115,20 @@ def calculate_risk_design_intensities(data,risk_assumptions):
 
                         # find the optimized fragility, defined by either the design point or the median
                         [im_r, median] = find_uniform_risk_intensity(hcurves_stats[i_vs30, i_site, i_imt, :, i_stat],
-                                                                     imtls[imt], beta, collapse_risk_target,
+                                                                     np_imtls[imt], beta, collapse_risk_target,
                                                                      design_point)
+
                         # store the design intensity, defined by the design point of the optimized fragility
                         im_risk[i_vs30, i_site, i_imt, i_rt] = im_r
                         # store the probability of exceedance associated with the design intensity
-                        lambda_risk[i_vs30, i_site, i_imt, i_rt] = np.interp(im_r, imtls[imt],
+                        lambda_risk[i_vs30, i_site, i_imt, i_rt] = np.interp(im_r, np_imtls[imt],
                                                                              hcurves_stats[i_vs30, i_site, i_imt, :,
                                                                              i_stat])
                         # store the median of the optimized fragility
                         fragility_risk[i_vs30, i_site, i_imt, i_rt] = median
 
                         # recalculate the risk value and the retrieve the risk integrand curve (i.e. the disaggregation)
-                        risk, disagg = risk_convolution(hcurves_stats[i_vs30, i_site, i_imt, :, i_stat], imtls[imt],
+                        risk, disagg = risk_convolution(hcurves_stats[i_vs30, i_site, i_imt, :, i_stat], np_imtls[imt],
                                                         median, beta)
                         # store the disaggregation
                         disagg_risk[i_vs30, i_site, i_imt, i_rt, :] = disagg
@@ -145,8 +152,14 @@ def calculate_risk_design_intensities(data,risk_assumptions):
                'disagg_risk': disagg_risk}
     return im_risk
 
+@njit
+def imtl_lognorm_pdf(beta, median, imtl):
+    # NOTE: perform the equivalent of stats.lognorm(beta, scale=median).pdf(imtl)
+    # without using scipy so numba can optimize it
+    # TODO: validate this is correct and perhaps express is a more elegant way
+    return 1 / (imtl * beta * np.sqrt(2 * np.pi)) * np.exp(-((np.log(imtl) - np.log(median)) ** 2) / (2 * beta ** 2))
 
-
+@njit
 def risk_convolution_error(median, hcurve, imtl, beta, target_risk):
     '''
     error function for optimization
@@ -160,12 +173,11 @@ def risk_convolution_error(median, hcurve, imtl, beta, target_risk):
     :return: error from risk target
     '''
     # the derivative of the fragility function, characterized as the pdf instead of the cdf
-    pdf_limitstate_im = stats.lognorm(beta, scale=median).pdf(imtl)
+    pdf_limitstate_im = imtl_lognorm_pdf(beta, median, imtl)
     disaggregation = pdf_limitstate_im * hcurve
     risk = np.trapz(disaggregation, x=imtl)
 
     return np.abs(target_risk - risk)
-
 
 def find_uniform_risk_intensity(hcurve, imtl, beta, target_risk, design_point):
     '''
@@ -186,7 +198,7 @@ def find_uniform_risk_intensity(hcurve, imtl, beta, target_risk, design_point):
 
     return im_r, median
 
-
+@njit
 def risk_convolution(hcurve, imtl, median, beta):
     '''
     calculates the total annual risk and the underlying disaggregation curve
@@ -199,7 +211,8 @@ def risk_convolution(hcurve, imtl, median, beta):
     :return: the total risk and the disagg curve
     '''
 
-    pdf_limitstate_im = stats.lognorm(beta, scale=median).pdf(imtl)
+    pdf_limitstate_im = imtl_lognorm_pdf(beta, median, imtl)
+
     disaggregation = pdf_limitstate_im * hcurve
     risk = np.trapz(disaggregation, x=imtl)
 
