@@ -10,7 +10,7 @@ start:
 
 .PHONY: stop
 stop:
-	docker compose stop risk-targeted-hazard
+	docker compose down
 
 .PHONY: shell
 shell:
