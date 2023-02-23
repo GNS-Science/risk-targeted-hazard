@@ -1,5 +1,6 @@
 from .base import *
-from numba import njit, typed, prange
+import joblib
+from numba import njit, typed, prange, get_num_threads
 
 @njit(parallel=True)
 def _hazard_design_intensities_interpolate(
@@ -91,19 +92,17 @@ def calculate_risk_design_intensities(data,risk_assumptions):
 
     n_risk_assumptions = len(risk_assumptions.keys())
 
-    im_risk = np.zeros([n_vs30, n_sites, n_imts, n_risk_assumptions])
-    lambda_risk = np.zeros_like(im_risk)
-    fragility_risk = np.zeros_like(im_risk)
-    disagg_risk = np.zeros([n_vs30, n_sites, n_imts, n_risk_assumptions, n_imtls])
-
     # select the statistic for the mean
     i_stat = 0
 
-    for i_vs30, vs30 in enumerate(vs30s):
-        print(f'Processing Vs30: {vs30}.')
-        for i_imt, imt in enumerate(imtls.keys()):
-            print(f'\tProcessing {imt}.')
+    def process_vs30(i_vs30, vs30):
 
+        vs30_im_risk = np.zeros([n_sites, n_imts, n_risk_assumptions])
+        vs30_lambda_risk = np.zeros_like(vs30_im_risk)
+        vs30_fragility_risk = np.zeros_like(vs30_im_risk)
+        vs30_disagg_risk = np.zeros([n_sites, n_imts, n_risk_assumptions, n_imtls])
+
+        for i_imt, imt in enumerate(imtls.keys()):
             if imt != 'PGA':
                 for i_site in range(n_sites):
                     # loop over the risk target assumption dictionaries
@@ -119,19 +118,19 @@ def calculate_risk_design_intensities(data,risk_assumptions):
                                                                      design_point)
 
                         # store the design intensity, defined by the design point of the optimized fragility
-                        im_risk[i_vs30, i_site, i_imt, i_rt] = im_r
+                        vs30_im_risk[i_site, i_imt, i_rt] = im_r
                         # store the probability of exceedance associated with the design intensity
-                        lambda_risk[i_vs30, i_site, i_imt, i_rt] = np.interp(im_r, np_imtls[imt],
+                        vs30_lambda_risk[i_site, i_imt, i_rt] = np.interp(im_r, np_imtls[imt],
                                                                              hcurves_stats[i_vs30, i_site, i_imt, :,
                                                                              i_stat])
                         # store the median of the optimized fragility
-                        fragility_risk[i_vs30, i_site, i_imt, i_rt] = median
+                        vs30_fragility_risk[i_site, i_imt, i_rt] = median
 
                         # recalculate the risk value and the retrieve the risk integrand curve (i.e. the disaggregation)
                         risk, disagg = risk_convolution(hcurves_stats[i_vs30, i_site, i_imt, :, i_stat], np_imtls[imt],
                                                         median, beta)
                         # store the disaggregation
-                        disagg_risk[i_vs30, i_site, i_imt, i_rt, :] = disagg
+                        vs30_disagg_risk[i_site, i_imt, i_rt, :] = disagg
 
             else:
                 # if the imt is PGA, then the period is 0 and the idea of a collapse fragility is meaningless
@@ -140,12 +139,50 @@ def calculate_risk_design_intensities(data,risk_assumptions):
                     # loop over the risk target assumption dictionaries
                     for i_rt, rt in enumerate(risk_assumptions.keys()):
                         hazard_rp = risk_assumptions[rt]['R_rp']
-                        im_risk[i_vs30, i_site, i_imt, i_rt] = np.exp(np.interp(np.log(1 / hazard_rp), np.log(
+                        vs30_im_risk[i_site, i_imt, i_rt] = np.exp(np.interp(np.log(1 / hazard_rp), np.log(
                             np.flip(hcurves_stats[i_vs30, i_site, i_imt, :, i_stat])), np.log(np.flip(imtls[imt]))))
-                        lambda_risk[i_vs30, i_site, i_imt, i_rt] = 1 / hazard_rp
-                        fragility_risk[i_vs30, i_site, i_imt, i_rt] = np.nan
-                        disagg_risk[i_vs30, i_site, i_imt, i_rt, :] = np.nan
-        print()
+                        vs30_lambda_risk[i_site, i_imt, i_rt] = 1 / hazard_rp
+                        vs30_fragility_risk[i_site, i_imt, i_rt] = np.nan
+                        vs30_disagg_risk[i_site, i_imt, i_rt, :] = np.nan
+
+        return {
+            "vs30": vs30,
+            "i_vs30": i_vs30,
+            "im_risk": vs30_im_risk,
+            "lambda_risk": vs30_lambda_risk,
+            "fragility_risk": vs30_fragility_risk,
+            "disagg_risk": vs30_disagg_risk,
+        }
+
+    im_risk = np.zeros([n_vs30, n_sites, n_imts, n_risk_assumptions])
+    lambda_risk = np.zeros_like(im_risk)
+    fragility_risk = np.zeros_like(im_risk)
+    disagg_risk = np.zeros([n_vs30, n_sites, n_imts, n_risk_assumptions, n_imtls])
+
+    batch_size = max(1, get_num_threads() - 1)
+
+    vs30s_job_queue = [
+        (i_vs30, vs30) for i_vs30, vs30 in enumerate(vs30s)
+    ]
+
+    while vs30s_job_queue:
+        tasks = []
+        for _i in range(batch_size):
+            if not vs30s_job_queue:
+                break
+
+            (i_vs30, vs30) = vs30s_job_queue.pop(0)
+            tasks.append(joblib.delayed(process_vs30)(i_vs30, vs30))
+
+        for result in joblib.Parallel(n_jobs=batch_size)(tasks):
+            vs30 = result["vs30"]
+            i_vs30 = result["i_vs30"]
+            im_risk[i_vs30] = result["im_risk"]
+            lambda_risk[i_vs30] = result["lambda_risk"]
+            fragility_risk[i_vs30] = result["fragility_risk"]
+            disagg_risk[i_vs30] = result["disagg_risk"]
+
+            print(f"Processed Vs30: {vs30}")
 
     # store results as a dictionary
     im_risk = {'im_risk': im_risk, 'lambda_risk': lambda_risk, 'fragility_risk': fragility_risk,
