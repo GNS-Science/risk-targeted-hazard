@@ -193,8 +193,11 @@ def calculate_risk_design_intensities(data,risk_assumptions):
 def imtl_lognorm_pdf(beta, median, imtl):
     # NOTE: perform the equivalent of stats.lognorm(beta, scale=median).pdf(imtl)
     # without using scipy so numba can optimize it
-    # TODO: validate this is correct and perhaps express is a more elegant way
-    return 1 / (imtl * beta * np.sqrt(2 * np.pi)) * np.exp(-((np.log(imtl) - np.log(median)) ** 2) / (2 * beta ** 2))
+    return np.where(
+        imtl == 0.,
+        0.,
+        1 / (imtl * beta * np.sqrt(2 * np.pi)) * np.exp(-((np.log(imtl) - np.log(median)) ** 2) / (2 * beta ** 2)),
+    )
 
 @njit
 def risk_convolution_error(median, hcurve, imtl, beta, target_risk):

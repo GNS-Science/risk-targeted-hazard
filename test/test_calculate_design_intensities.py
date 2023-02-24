@@ -2204,3 +2204,53 @@ class TestCalculateDesignIntensities(TestCase):
 
         with self.subTest("has expected disagg_risk"):
             assert_almost_equal(expected_result["disagg_risk"], result["disagg_risk"])
+
+    def test_imtl_lognorm_pdf(self):
+        # Given
+        beta = 0.45
+        median = 0.5
+        imtl = np.array([
+            0.0001, 0.0002, 0.0004,0.0006,
+            0.0008, 0.001, 0.002, 0.004,
+            0.006, 0.008, 0.01, 0.02,
+            0.04, 0.06, 0.08, 0.1,
+            0.2, 0.3, 0.4, 0.5,
+            0.6, 0.7, 0.8, 0.9,
+            1, 1.2, 1.4, 1.6,
+            1.8, 2, 2.2, 2.4,
+            2.6, 2.8, 3, 3.5,
+            4, 4.5, 5, 6,
+            7, 8, 9, 10
+        ])
+
+        # When
+        result = rth.imtl_lognorm_pdf(beta, median, imtl)
+
+        # Then
+        expected_result = np.array([
+            1.43867893e-74, 1.00719728e-62, 6.57438103e-52, 4.63877416e-46,
+            4.00115028e-42, 3.41021596e-39, 9.01536893e-31, 2.22215726e-23,
+            1.55964702e-19, 5.10688107e-17, 3.44198758e-15, 3.43606904e-10,
+            3.19818902e-06, 2.23284629e-04, 2.77546683e-03, 1.47926552e-02,
+            5.57634552e-01, 1.55152561e+00, 1.95994048e+00, 1.77307680e+00,
+            1.36113359e+00, 9.57628309e-01, 6.42282007e-01, 4.19731583e-01,
+            2.70702574e-01, 1.11335129e-01, 4.62139398e-02, 1.96244862e-02,
+            8.56942554e-03, 3.85342479e-03, 1.78378703e-03, 8.49089265e-04,
+            4.14997015e-04, 2.07940305e-04, 1.06649625e-04, 2.20380458e-05,
+            5.11435718e-06, 1.31064418e-06, 3.65874596e-07, 3.53306878e-08,
+            4.30735229e-09, 6.32885125e-10, 1.08374264e-10, 2.10934712e-11
+        ])
+        assert_almost_equal(expected_result, result)
+
+    def test_imtl_lognorm_pdf_divide_by_zero_handling(self):
+        # Given
+        beta = 0.45
+        median = 0.5
+        imtl = np.array([0.0, 1.0])
+
+        # When
+        result = rth.imtl_lognorm_pdf(beta, median, imtl)
+
+        # Then
+        expected_result = np.array([0., 0.27070257])
+        assert_almost_equal(expected_result, result)
