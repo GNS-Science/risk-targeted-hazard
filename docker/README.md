@@ -58,10 +58,6 @@ Run tests:
 
 `make test`
 
-Linting:
-
-`make lint`
-
 Update python packages. Set the shell variable `POETRY_PACKAGES` to update a specific package(s):
 
 `make venv-update`
