@@ -62,12 +62,12 @@ def imt_from_period(period):
     return imt
 
 
-def find_fragility_median(im_value, beta, design_prob):
-    return minimize(median_based_on_p_collapse, im_value, args=(im_value, beta, design_prob), method='Nelder-Mead').x[0]
+def find_fragility_median(im_value, beta, design_point):
+    return minimize(median_based_on_design_point, im_value, args=(im_value, beta, design_point), method='Nelder-Mead').x[0]
 
 
-def median_based_on_p_collapse(x, im, beta, target_prob):
-    return np.abs(target_prob - stats.lognorm(beta, scale=x).cdf(im))[0]
+def median_based_on_design_point(x, im, beta, design_point):
+    return np.abs(design_point - stats.lognorm(beta, scale=x).cdf(im))[0]
 
 
 def weightedQuantile(values, quantiles, sample_weight=None, 

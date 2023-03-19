@@ -107,14 +107,14 @@ def calculate_risk_design_intensities(data,risk_assumptions):
                 for i_site in range(n_sites):
                     # loop over the risk target assumption dictionaries
                     for i_rt, rt in enumerate(risk_assumptions.keys()):
-                        collapse_risk_target = risk_assumptions[rt]['collapse_risk_target']
+                        risk_target = risk_assumptions[rt]['ls_risk_target']
                         cmr = risk_assumptions[rt]['cmr']
                         beta = risk_assumptions[rt]['beta']
                         design_point = risk_assumptions[rt]['design_point']
 
                         # find the optimized fragility, defined by either the design point or the median
                         [im_r, median] = find_uniform_risk_intensity(hcurves_stats[i_vs30, i_site, i_imt, :, i_stat],
-                                                                     np_imtls[imt], beta, collapse_risk_target,
+                                                                     np_imtls[imt], beta, risk_target,
                                                                      design_point)
 
                         # store the design intensity, defined by the design point of the optimized fragility

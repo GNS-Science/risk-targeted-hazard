@@ -961,10 +961,10 @@ class TestCalculateDesignIntensities(TestCase):
         R_assumptions["R_rps"] = [500, 1000, 2500]
         for R_rp in R_assumptions["R_rps"]:
             risk_factor = baseline_rp / R_rp
-            risk_target = round(baseline_risk * risk_factor, 12)
+            fatality_risk_target = round(baseline_risk * risk_factor, 12)
             R_assumptions[f"APoE: 1/{R_rp}"] = {
                 "risk_factor": risk_factor,
-                "risk_target": risk_target,
+                "fatality_risk_target": fatality_risk_target,
             }
 
         risk_assumptions = {}
@@ -972,10 +972,10 @@ class TestCalculateDesignIntensities(TestCase):
             key = f"APoE: 1/{R_rp}"
             risk_assumptions[key] = {
                 "risk_factor": R_assumptions[f"APoE: 1/{R_rp}"]["risk_factor"],
-                "risk_target": R_assumptions[f"APoE: 1/{R_rp}"]["risk_target"],
+                "fatality_risk_target": R_assumptions[f"APoE: 1/{R_rp}"]["fatality_risk_target"],
                 "R_rp": R_rp,
-                "collapse_risk_target": round(
-                    R_assumptions[f"APoE: 1/{R_rp}"]["risk_target"]
+                "ls_risk_target": round(
+                    R_assumptions[f"APoE: 1/{R_rp}"]["fatality_risk_target"]
                     / p_fatality_given_collapse,
                     12,
                 ),
