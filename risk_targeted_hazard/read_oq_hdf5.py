@@ -32,18 +32,18 @@ def retrieve_data(file_id,named_sites=True):
 
     return data
 
-def convert_imtls_to_disp(acc_imtls):
-    '''
-    converts the intensity measure types and levels to spectral displacements
-    '''
-    disp_imtls = {}
-    for acc_imt in acc_imtls.keys():
-        period = period_from_imt(acc_imt)
-        disp_imt = acc_imt.replace('A','D')
-
-        disp_imtls[disp_imt] = acc_to_disp(np.array(acc_imtls[acc_imt]),period).tolist()
-        
-    return disp_imtls
+# def convert_imtls_to_disp(acc_imtls):
+#     '''
+#     converts the intensity measure types and levels to spectral displacements
+#     '''
+#     disp_imtls = {}
+#     for acc_imt in acc_imtls.keys():
+#         period = period_from_imt(acc_imt)
+#         disp_imt = acc_imt.replace('A','D')
+#
+#         disp_imtls[disp_imt] = acc_to_disp(np.array(acc_imtls[acc_imt]),period).tolist()
+#
+#     return disp_imtls
 
 def find_site_names(sites,dtol=0.1):
     '''

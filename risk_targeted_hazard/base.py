@@ -24,9 +24,15 @@ g = 9.80665 # gravity in m/s^2
 def acc_to_disp(acc,t):
     return (acc * g) * (t/(2*np.pi))**2
 
+def acc_to_vel(acc,t):
+    return (acc * g) * (t/(2*np.pi))
+
 
 def disp_to_acc(disp,t):
     return disp / (t/(2*np.pi))**2 / g
+
+def vel_to_acc(disp,t):
+    return disp / (t/(2*np.pi)) / g
 
 
 def sigfig(x, p):
@@ -99,8 +105,6 @@ def weightedQuantile(values, quantiles, sample_weight=None,
         weighted_quantiles /= np.sum(sample_weight)
     return np.interp(quantiles, weighted_quantiles, values)
 
-
-
 def set_plot_formatting():
     # set up plot formatting
     SMALL_SIZE = 15
@@ -113,7 +117,7 @@ def set_plot_formatting():
     plt.rc('xtick', labelsize=SMALL_SIZE)  # fontsize of the tick labels
     plt.rc('ytick', labelsize=SMALL_SIZE)  # fontsize of the tick labels
     plt.rc('legend', fontsize=SMALL_SIZE)  # legend fontsize
+    plt.rc('legend', title_fontsize=SMALL_SIZE)  # legend title fontsize
     plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
-
 
 set_plot_formatting()
