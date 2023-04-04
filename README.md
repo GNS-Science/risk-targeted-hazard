@@ -7,24 +7,25 @@ Horspool, N., Hulsey, A., Elwood., K., and Gerstenberger, M. 2021. Risk-targeted
 
 ### Getting Started
 
-1. Create and activate a new Python virtual env:
+1. Create and activate a new conda environment:
     ```
-    virtualenv rth_venv
-    rth_venv\Scripts\activate.bat
+    conda create -n risk python=3.10
+    conda activate risk
     ```
-    *NOTE*: On Linux / Mac activate the virtual env with `source rth_venv/bin/activate`
 
 2. Install the library dependencies:
     ```
-    pip3 install -r requirements.txt
+    pip install -r requirements.txt
     ```
+
+3. Optional: Configure environment variables for [Toshi Hazard Store](https://github.com/GNS-Science/toshi-hazard-store)
 
 ### Development
 
 Install the development dependencies:
 
 ```
-pip3 install -r requirements-dev.txt
+pip install -r requirements-dev.txt
 ```
 
 Run the tests:
