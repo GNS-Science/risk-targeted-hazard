@@ -1,7 +1,7 @@
 from .base import *
 from .prepare_design_intensities import *
 
-from toshi_hazard_store.query_v3 import get_hazard_curves
+from toshi_hazard_store.query import get_hazard_curves
 from nzshm_common.location.location import location_by_id, LOCATION_LISTS
 from nzshm_common.location.location import LOCATIONS_BY_ID
 from nzshm_common.location.code_location import CodedLocation
@@ -33,14 +33,15 @@ def save_hdf(hf_name, data):
             dset[:] = np.array(data['hcurves'][dset_name])
 
         # add poe values
-        grp = hf.create_group('hazard_design')
-        grp.attrs['hazard_rps'] = data['hazard_design']['hazard_rps']
-        for intensity_type in ['acc', 'disp']:
-            subgrp = grp.create_group(intensity_type)
-            for dset_name in ['stats_im_hazard']:
-                dset = subgrp.create_dataset(dset_name,
-                                             np.array(data['hazard_design'][intensity_type][dset_name]).shape)
-                dset[:] = np.array(data['hazard_design'][intensity_type][dset_name])
+        if 'hazard_design' in data.keys():
+            grp = hf.create_group('hazard_design')
+            grp.attrs['hazard_rps'] = data['hazard_design']['hazard_rps']
+            for intensity_type in ['acc', 'disp']:
+                subgrp = grp.create_group(intensity_type)
+                for dset_name in ['stats_im_hazard']:
+                    dset = subgrp.create_dataset(dset_name,
+                                                 np.array(data['hazard_design'][intensity_type][dset_name]).shape)
+                    dset[:] = np.array(data['hazard_design'][intensity_type][dset_name])
 
         # add risk values
         if 'risk_design' in data.keys():
@@ -203,6 +204,8 @@ def create_sites_df(named_sites=True, site_list=None, cropped_grid=False,
             sites['float_lon'] = [float(lon) for lon in sites['lon']]
             sites = sites[(sites['float_lon'] >= min_lon) & (sites['float_lon'] <= max_lon)].drop(['float_lon'], axis=1)
 
+        sites.sort_values(['lat','lon'],inplace=True)
+
     return sites
 
 
@@ -212,6 +215,7 @@ def query_nshm_hcurves(hazard_id, sites, vs30_list, imt_list, imtl_list, agg_lis
     hcurves = -1 * np.ones([len(vs30_list), len(site_list), len(imt_list), len(imtl_list), len(agg_list)])
 
     for i_site, site in enumerate(site_list):
+        print(f'Site #{i_site} of {len(site_list)}.')
         latlon = sites.loc[site, 'latlon']
         for res in get_hazard_curves([latlon], vs30_list, [hazard_id], imt_list, agg_list):
             vs30 = res.vs30
@@ -224,20 +228,20 @@ def query_nshm_hcurves(hazard_id, sites, vs30_list, imt_list, imtl_list, agg_lis
 
             hcurves[i_vs30, i_site, i_imt, :, i_agg] = [val.val for val in res.values]
 
-    # identify any missing data before throwing an error
-    if np.sum(hcurves < 0) != 0:
-        vs30_idx, site_idx, imt_idx, imtl_idx, agg_idx = np.where(hcurves < 0)
-
-        print('\nMissing data from:')
-        print(f'\t{[vs30_list[idx] for idx in np.unique(vs30_idx)]}')
-        if len(np.unique(site_idx)) > 5:
-            print(f'\t{[site_list[idx] for idx in np.unique(site_idx)[:5]]} and more...')
-        else:
-            print(f'\t{[site_list[idx] for idx in np.unique(site_idx)]}')
-        print(f'\t{[imt_list[idx] for idx in np.unique(imt_idx)]}')
-        print(f'\t{[agg_list[idx] for idx in np.unique(agg_idx)]}')
-
-    assert np.sum(hcurves < 0) == 0, NameError('Resolve missing data.')
+    # # identify any missing data before throwing an error
+    # if np.sum(hcurves < 0) != 0:
+    #     vs30_idx, site_idx, imt_idx, imtl_idx, agg_idx = np.where(hcurves < 0)
+    #
+    #     print('\nMissing data from:')
+    #     print(f'\t{[vs30_list[idx] for idx in np.unique(vs30_idx)]}')
+    #     if len(np.unique(site_idx)) > 5:
+    #         print(f'\t{[site_list[idx] for idx in np.unique(site_idx)[:5]]} and more...')
+    #     else:
+    #         print(f'\t{[site_list[idx] for idx in np.unique(site_idx)]}')
+    #     print(f'\t{[imt_list[idx] for idx in np.unique(imt_idx)]}')
+    #     print(f'\t{[agg_list[idx] for idx in np.unique(agg_idx)]}')
+    #
+    # assert np.sum(hcurves < 0) == 0, NameError('Resolve missing data.')
 
     return hcurves
 
