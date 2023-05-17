@@ -15,6 +15,7 @@ h5py = "*"
 pandas = "*"
 matplotlib = "*"
 toshi_hazard_store = "*"
+nzshm-common = "*"
 joblib = "*"
 
 [tool.poetry.dev-dependencies]

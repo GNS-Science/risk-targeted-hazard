@@ -1612,18 +1612,15 @@ files = [
 
 [[package]]
 name = "nzshm-common"
-version = "0.4.0"
+version = "0.6.0"
 description = "A small pure python library for shared NZ NSHM data like locations."
 category = "main"
 optional = false
 python-versions = ">=3.8,<4.0.0"
 files = [
-    {file = "nzshm-common-0.4.0.tar.gz", hash = "sha256:f0f7d303548c70be0f12c7894b75fcf59a7019f068e9ab71f9c950b9ec63740b"},
-    {file = "nzshm_common-0.4.0-py3-none-any.whl", hash = "sha256:78572dde972362ee3b0c3b5e2633950cf9befcc7ada03a382ad5084e5c148ef1"},
+    {file = "nzshm_common-0.6.0-py3-none-any.whl", hash = "sha256:5f3e1e95a48758f39ff26b3c6b17b0bb03b623a9c14a1f5db5f71aef1b3e1761"},
+    {file = "nzshm_common-0.6.0.tar.gz", hash = "sha256:a449c9114814aad3e1751b49a290fb46f4fd6e916e5efced1560dac7ac81fa46"},
 ]
-
-[package.extras]
-geometry = ["Shapely[geometry] (>=1.8.3,<2.0.0)", "geopandas[geometry] (>=0.11.1,<0.12.0)"]
 
 [[package]]
 name = "packaging"
@@ -2534,22 +2531,25 @@ files = [
 
 [[package]]
 name = "toshi-hazard-store"
-version = "0.5.5"
+version = "0.7.2"
 description = "Library for saving and retrieving NZHSM openquake hazard results with convenience (uses AWS Dynamodb)."
 category = "main"
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "toshi-hazard-store-0.5.5.tar.gz", hash = "sha256:f1658dc98830001148b78a1acbf96225e51fb78777848b6df548464b7923ff7e"},
-    {file = "toshi_hazard_store-0.5.5-py3-none-any.whl", hash = "sha256:ee8b9ceeae40cda394beda7f9d44c17dd925de0d6b43609db04cb772685beb83"},
+    {file = "toshi_hazard_store-0.7.2-py3-none-any.whl", hash = "sha256:512b98917a1b86b4ef7a7aaf2f93f14d345a5a38473d1643bbf9ee24cb0bc2ad"},
+    {file = "toshi_hazard_store-0.7.2.tar.gz", hash = "sha256:2b0056565321cbb66cadc22b393c5f767dc578edab75bdb60d01999f3f6c96c3"},
 ]
 
 [package.dependencies]
 numpy = ">=1.23.1,<2.0.0"
-nzshm-common = ">=0.4.0"
+nzshm-common = ">=0.6.0,<0.7.0"
 pandas = ">=1.4.3,<2.0.0"
 pynamodb = ">=5.2.1,<6.0.0"
 pynamodb-attributes = ">=0.3.2,<0.4.0"
+
+[package.extras]
+openquake = ["openquake-engine (>=3.16,<4.0)"]
 
 [[package]]
 name = "traitlets"
@@ -2667,4 +2667,4 @@ test = ["websockets"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "092f2aa8ce95605826cd624025f7f47b61fec2d49d5f5b439321b67e88b9b8a2"
+content-hash = "15cac3441f85b07602becb5e7cd57c615945fc203d16a4a7f315a2df7c4d9393"
