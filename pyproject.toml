@@ -5,18 +5,23 @@ name = "risk-targeted-hazard"
 description = "Risk Targeted Hazard"
 version = "0.1.0"
 authors = ["Anne Hulsey <anne.hulsey@auckland.ac.nz>"]
+license = "GPL3"
+readme = "README.md"
+packages = [
+    {include = "risk_targeted_hazard"}
+]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-numpy = "*"
-numba = "*"
-scipy = "*"
-h5py = "*"
-pandas = "*"
-matplotlib = "*"
-toshi_hazard_store = "*"
-nzshm-common = "*"
-joblib = "*"
+numpy = "1.23.5"
+numba = "0.56.4"
+joblib = "1.2.0"
+scipy = "^1.9.3"
+h5py = "^3.7.0"
+pandas = "^1.5.2"
+matplotlib = "^3.6.2"
+toshi_hazard_store = "^0.7.2"
+nzshm-common = "^0.6.0"
 
 [tool.poetry.dev-dependencies]
 black = "*"
@@ -24,3 +29,7 @@ pytest = "*"
 notebook = "*"
 mypy = "*"
 ipdb = "*"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

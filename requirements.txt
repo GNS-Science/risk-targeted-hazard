@@ -7,3 +7,5 @@ pandas==1.5.2
 matplotlib==3.6.2
 toshi_hazard_store==0.7.2
 nzshm-common==0.6.0
+pytest
+notebook
