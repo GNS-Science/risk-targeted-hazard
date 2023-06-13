@@ -19,7 +19,7 @@ USER user
 
 # Install poetry
 ENV POETRY_HOME=/home/user/.poetry
-ARG POETRY_VERSION=1.3.0
+ARG POETRY_VERSION=1.5.1
 
 RUN mkdir "$POETRY_HOME"
 RUN curl -sSL https://install.python-poetry.org | POETRY_HOME=$POETRY_HOME python3 - --version "$POETRY_VERSION"
