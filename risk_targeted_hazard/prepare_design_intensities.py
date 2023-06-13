@@ -1,17 +1,20 @@
 from .base import *
 import joblib
-from numba import njit, typed, prange, get_num_threads
+from numba import njit, typed, prange, get_num_threads # type: ignore
+from typing import Dict, Any, Tuple, Union
+import numpy.typing as npt
+
 
 @njit(parallel=True)
 def _hazard_design_intensities_interpolate(
-    hcurves_stats,
-    stats_im_hazard,
-    hazard_rps_reciprocal_log,
-    imtls_imt_flip_logs,
-    n_vs30,
-    n_sites,
-    n_imts,
-    n_stats,
+    hcurves_stats: npt.NDArray[Any],
+    stats_im_hazard: npt.NDArray[Any],
+    hazard_rps_reciprocal_log: npt.NDArray[Any],
+    imtls_imt_flip_logs: typed.List,
+    n_vs30: int,
+    n_sites: int,
+    n_imts: int,
+    n_stats: int,
 ) -> None:
     for i_site in prange(n_sites):
         for i_vs30 in range(n_vs30):
@@ -22,7 +25,12 @@ def _hazard_design_intensities_interpolate(
                     # all inputs are converted to the natural log (which is log in numpy) and the output is converted back via the exponent
                     stats_im_hazard[i_vs30, i_site, i_imt, :, i_stat] = np.exp(np.interp(hazard_rps_reciprocal_log, np.log(np.flip(hcurves_stats[i_vs30, i_site, i_imt, :, i_stat])), imtls_imt_flip_logs[i_imt]))
 
-def calculate_hazard_design_intensities(data,hazard_rps,intensity_type='acc'):
+
+def calculate_hazard_design_intensities(
+    data: Dict[str, Any],
+    hazard_rps: npt.NDArray[Any],
+    intensity_type: str = 'acc'
+) -> npt.NDArray[Any]:
     '''
     calculate design intensities based on an annual probability of exceedance (APoE)
 
@@ -65,7 +73,7 @@ def calculate_hazard_design_intensities(data,hazard_rps,intensity_type='acc'):
     return stats_im_hazard
 
 
-def calculate_risk_design_intensities(data,risk_assumptions):
+def calculate_risk_design_intensities(data: Dict[str, Any], risk_assumptions: Dict[str, Any]) -> Dict[str, Any]:
     '''
     calculate design intensities based on a risk target and fragility assumptions
 
@@ -95,7 +103,7 @@ def calculate_risk_design_intensities(data,risk_assumptions):
     # select the statistic for the mean
     i_stat = 0
 
-    def process_vs30(i_vs30, vs30):
+    def process_vs30(i_vs30: int, vs30: int) -> Dict[str, Any]:
 
         vs30_im_risk = np.zeros([n_sites, n_imts, n_risk_assumptions])
         vs30_lambda_risk = np.zeros_like(vs30_im_risk)
@@ -185,14 +193,15 @@ def calculate_risk_design_intensities(data,risk_assumptions):
             print(f"Processed Vs30: {vs30}")
 
     # store results as a dictionary
-    im_risk = {'im_risk': im_risk, 'lambda_risk': lambda_risk, 'fragility_risk': fragility_risk,
+    results = {'im_risk': im_risk, 'lambda_risk': lambda_risk, 'fragility_risk': fragility_risk,
                'disagg_risk': disagg_risk}
-    return im_risk
+    return results
 
 @njit
-def imtl_lognorm_pdf(beta, median, imtl):
+def imtl_lognorm_pdf(beta: float, median: Union[float, np.float64, npt.NDArray[Any]], imtl: npt.NDArray[Any]) -> npt.NDArray[Any]:
     # NOTE: perform the equivalent of stats.lognorm(beta, scale=median).pdf(imtl)
     # without using scipy so numba can optimize it
+
     return np.where(
         imtl == 0.,
         0.,
@@ -200,7 +209,7 @@ def imtl_lognorm_pdf(beta, median, imtl):
     )
 
 @njit
-def risk_convolution_error(median, hcurve, imtl, beta, target_risk):
+def risk_convolution_error(median: npt.NDArray[Any], hcurve: npt.NDArray[Any], imtl: npt.NDArray[Any], beta: float, target_risk: float) -> np.float64:
     '''
     error function for optimization
 
@@ -212,14 +221,16 @@ def risk_convolution_error(median, hcurve, imtl, beta, target_risk):
 
     :return: error from risk target
     '''
+
     # the derivative of the fragility function, characterized as the pdf instead of the cdf
     pdf_limitstate_im = imtl_lognorm_pdf(beta, median, imtl)
     disaggregation = pdf_limitstate_im * hcurve
     risk = np.trapz(disaggregation, x=imtl)
+    
+    error : np.float64 = np.abs(target_risk - risk)
+    return error
 
-    return np.abs(target_risk - risk)
-
-def find_uniform_risk_intensity(hcurve, imtl, beta, target_risk, design_point):
+def find_uniform_risk_intensity(hcurve: npt.NDArray[Any], imtl: npt.NDArray[Any], beta: float, target_risk: float, design_point: np.float64) -> Tuple[np.float64, np.float64]:
     '''
     optimization to find the fragility and associated design intensity
 
@@ -235,11 +246,11 @@ def find_uniform_risk_intensity(hcurve, imtl, beta, target_risk, design_point):
     x0 = 0.5
     median = minimize(risk_convolution_error, x0, args=(hcurve, imtl, beta, target_risk), method='Nelder-Mead').x[0]
     im_r = stats.lognorm(beta, scale=median).ppf(design_point)
-
+    
     return im_r, median
 
 @njit
-def risk_convolution(hcurve, imtl, median, beta):
+def risk_convolution(hcurve: npt.NDArray[Any], imtl: npt.NDArray[Any], median: Union[float, np.float64], beta: float) -> Tuple[np.float64, npt.NDArray[Any]]:
     '''
     calculates the total annual risk and the underlying disaggregation curve
 
@@ -257,4 +268,3 @@ def risk_convolution(hcurve, imtl, median, beta):
     risk = np.trapz(disaggregation, x=imtl)
 
     return risk, disaggregation
-
