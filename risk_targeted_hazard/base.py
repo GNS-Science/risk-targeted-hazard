@@ -1,16 +1,6 @@
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-
-import os
-import json
-import glob
 import re
-import h5py
-import ast
-
-
-from pathlib import Path
+import numpy as np
+import matplotlib.pyplot as plt
 from scipy import stats
 from scipy.optimize import minimize
 
@@ -120,4 +110,3 @@ def set_plot_formatting():
     plt.rc('legend', title_fontsize=SMALL_SIZE)  # legend title fontsize
     plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
 
-set_plot_formatting()

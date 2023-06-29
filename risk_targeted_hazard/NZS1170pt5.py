@@ -1,4 +1,5 @@
-from .base import *
+import numpy as np
+import pandas as pd
 
 # Near fault factor interpolation
 near_fault_T = np.array([1.5,2,3,4,5])

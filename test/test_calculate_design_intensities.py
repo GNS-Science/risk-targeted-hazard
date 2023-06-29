@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 import scipy
 import risk_targeted_hazard as rth
+from risk_targeted_hazard.prepare_design_intensities import imtl_lognorm_pdf
 from numpy.testing import assert_almost_equal
 
 
@@ -2224,7 +2225,7 @@ class TestCalculateDesignIntensities(TestCase):
         ])
 
         # When
-        result = rth.imtl_lognorm_pdf(beta, median, imtl)
+        result = imtl_lognorm_pdf(beta, median, imtl)
 
         # Then
         expected_result = np.array([
@@ -2249,7 +2250,7 @@ class TestCalculateDesignIntensities(TestCase):
         imtl = np.array([0.0, 1.0])
 
         # When
-        result = rth.imtl_lognorm_pdf(beta, median, imtl)
+        result = imtl_lognorm_pdf(beta, median, imtl)
 
         # Then
         expected_result = np.array([0., 0.27070257])
